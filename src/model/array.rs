@@ -1,4 +1,4 @@
-use std::ops::Index;
+use std::ops::{Add, Index};
 
 #[derive(Clone)]
 pub struct Array<T> {
@@ -70,6 +70,23 @@ impl<T> Index<Vec<usize>> for Array<T> {
             offset *= dimension;
         }
         return &self.data[data_index];
+    }
+}
+
+impl<T: Add<Output = T> + Copy> Add<Array<T>> for Array<T> {
+    type Output = Self;
+
+    fn add(self, addend: Array<T>) -> Self::Output {
+        if self.dimensions != addend.dimensions {
+            panic!("Augend dimensions and addend dimensions mismatch.")
+        }
+        let data: Vec<T> = (0..self.data.len())
+            .map(|data_index| self.data[data_index] + addend.data[data_index])
+            .collect();
+        Array {
+            data,
+            dimensions: self.dimensions,
+        }
     }
 }
 
@@ -166,5 +183,25 @@ mod tests {
         let array: Array<isize> = Array::of(dimensions, data);
 
         array[array_index];
+    }
+
+    #[test]
+    fn should_add_arrays() {
+        let first_array: Array<isize> = Array::of(vec![2, 2], vec![4, 3, 2, 1]);
+        let second_array: Array<isize> = Array::of(vec![2, 2], vec![1, 2, 3, 4]);
+
+        let result = first_array + second_array;
+
+        assert_eq!(result.dimensions, vec![2, 2]);
+        assert_eq!(result.data, vec![5, 5, 5, 5]);
+    }
+
+    #[test]
+    #[should_panic]
+    fn should_not_add_arrays_with_different_dimensions() {
+        let first_array: Array<isize> = Array::of(vec![2, 2], vec![4, 3, 2, 1]);
+        let second_array: Array<isize> = Array::of(vec![2, 2, 1], vec![1, 2, 3, 4]);
+
+        let _ = first_array + second_array;
     }
 }
