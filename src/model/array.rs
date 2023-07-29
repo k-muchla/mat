@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Index, Mul, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Index, Mul, MulAssign, Sub, SubAssign};
 
 #[derive(Clone)]
 pub struct Array<T> {
@@ -142,6 +142,17 @@ impl<T: Mul<Output = T> + Copy> Mul<Array<T>> for Array<T> {
         Array {
             data,
             dimensions: self.dimensions,
+        }
+    }
+}
+
+impl<T: MulAssign + Copy> MulAssign<Array<T>> for Array<T> {
+    fn mul_assign(&mut self, multiplicand: Array<T>) {
+        if self.dimensions != multiplicand.dimensions {
+            panic!("Multiplier dimensions and multiplicand dimensions mismatch.")
+        }
+        for data_index in 0..self.data.len() {
+            self.data[data_index] *= multiplicand.data[data_index];
         }
     }
 }
@@ -339,5 +350,25 @@ mod tests {
         let second_array: Array<isize> = Array::of(vec![2, 2, 1], vec![1, 2, 3, 4]);
 
         let _ = first_array * second_array;
+    }
+
+    #[test]
+    fn should_multiply_assign_arrays() {
+        let mut first_array: Array<isize> = Array::of(vec![2, 2], vec![1, 2, 3, 4]);
+        let second_array: Array<isize> = Array::of(vec![2, 2], vec![1, 2, 3, 4]);
+
+        first_array *= second_array;
+
+        assert_eq!(first_array.dimensions, vec![2, 2]);
+        assert_eq!(first_array.data, vec![1, 4, 9, 16]);
+    }
+
+    #[test]
+    #[should_panic]
+    fn should_not_multiply_assign_arrays_with_different_dimensions() {
+        let mut first_array: Array<isize> = Array::of(vec![2, 2], vec![1, 2, 3, 4]);
+        let second_array: Array<isize> = Array::of(vec![2, 2, 1], vec![1, 2, 3, 4]);
+
+        first_array *= second_array;
     }
 }
