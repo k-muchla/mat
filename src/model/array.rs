@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Index, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Index, Mul, Sub, SubAssign};
 
 #[derive(Clone)]
 pub struct Array<T> {
@@ -125,6 +125,23 @@ impl<T: SubAssign + Copy> SubAssign<Array<T>> for Array<T> {
         }
         for data_index in 0..self.data.len() {
             self.data[data_index] -= subtrahend.data[data_index];
+        }
+    }
+}
+
+impl<T: Mul<Output = T> + Copy> Mul<Array<T>> for Array<T> {
+    type Output = Self;
+
+    fn mul(self, multiplicand: Array<T>) -> Self::Output {
+        if self.dimensions != multiplicand.dimensions {
+            panic!("Multiplier dimensions and multiplicand dimensions mismatch.")
+        }
+        let data: Vec<T> = (0..self.data.len())
+            .map(|data_index| self.data[data_index] * multiplicand.data[data_index])
+            .collect();
+        Array {
+            data,
+            dimensions: self.dimensions,
         }
     }
 }
@@ -302,5 +319,25 @@ mod tests {
         let second_array: Array<isize> = Array::of(vec![2, 2, 1], vec![1, 2, 3, 4]);
 
         first_array -= second_array;
+    }
+
+    #[test]
+    fn should_multiply_arrays() {
+        let first_array: Array<isize> = Array::of(vec![2, 2], vec![1, 2, 3, 4]);
+        let second_array: Array<isize> = Array::of(vec![2, 2], vec![1, 2, 3, 4]);
+
+        let result = first_array * second_array;
+
+        assert_eq!(result.dimensions, vec![2, 2]);
+        assert_eq!(result.data, vec![1, 4, 9, 16]);
+    }
+
+    #[test]
+    #[should_panic]
+    fn should_not_multiply_arrays_with_different_dimensions() {
+        let first_array: Array<isize> = Array::of(vec![2, 2], vec![1, 2, 3, 4]);
+        let second_array: Array<isize> = Array::of(vec![2, 2, 1], vec![1, 2, 3, 4]);
+
+        let _ = first_array * second_array;
     }
 }
