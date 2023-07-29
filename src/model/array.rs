@@ -1,4 +1,4 @@
-use std::ops::{Add, Index, Sub};
+use std::ops::{Add, AddAssign, Index, Sub};
 
 #[derive(Clone)]
 pub struct Array<T> {
@@ -86,6 +86,17 @@ impl<T: Add<Output = T> + Copy> Add<Array<T>> for Array<T> {
         Array {
             data,
             dimensions: self.dimensions,
+        }
+    }
+}
+
+impl<T: AddAssign + Copy> AddAssign<Array<T>> for Array<T> {
+    fn add_assign(&mut self, addend: Array<T>) {
+        if self.dimensions != addend.dimensions {
+            panic!("Augend dimensions and addend dimensions mismatch.")
+        }
+        for data_index in 0..self.data.len() {
+            self.data[data_index] += addend.data[data_index];
         }
     }
 }
@@ -220,6 +231,26 @@ mod tests {
         let second_array: Array<isize> = Array::of(vec![2, 2, 1], vec![1, 2, 3, 4]);
 
         let _ = first_array + second_array;
+    }
+
+    #[test]
+    fn should_add_assign_arrays() {
+        let mut first_array: Array<isize> = Array::of(vec![2, 2], vec![4, 3, 2, 1]);
+        let second_array: Array<isize> = Array::of(vec![2, 2], vec![1, 2, 3, 4]);
+
+        first_array += second_array;
+
+        assert_eq!(first_array.dimensions, vec![2, 2]);
+        assert_eq!(first_array.data, vec![5, 5, 5, 5])
+    }
+
+    #[test]
+    #[should_panic]
+    fn should_not_add_assign_arrays_with_different_dimensions() {
+        let mut first_array: Array<isize> = Array::of(vec![2, 2], vec![4, 3, 2, 1]);
+        let second_array: Array<isize> = Array::of(vec![2, 2, 1], vec![1, 2, 3, 4]);
+
+        first_array += second_array;
     }
 
     #[test]
