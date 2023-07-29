@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Index, Mul, MulAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, Index, Mul, MulAssign, Sub, SubAssign};
 
 #[derive(Clone)]
 pub struct Array<T> {
@@ -153,6 +153,23 @@ impl<T: MulAssign + Copy> MulAssign<Array<T>> for Array<T> {
         }
         for data_index in 0..self.data.len() {
             self.data[data_index] *= multiplicand.data[data_index];
+        }
+    }
+}
+
+impl<T: Div<Output = T> + Copy> Div<Array<T>> for Array<T> {
+    type Output = Self;
+
+    fn div(self, divisor: Array<T>) -> Self::Output {
+        if self.dimensions != divisor.dimensions {
+            panic!("Dividend dimensions and divisor dimensions mismatch.")
+        }
+        let data: Vec<T> = (0..self.data.len())
+            .map(|data_index| self.data[data_index] / divisor.data[data_index])
+            .collect();
+        Array {
+            data,
+            dimensions: self.dimensions,
         }
     }
 }
@@ -370,5 +387,25 @@ mod tests {
         let second_array: Array<isize> = Array::of(vec![2, 2, 1], vec![1, 2, 3, 4]);
 
         first_array *= second_array;
+    }
+
+    #[test]
+    fn should_divide_arrays() {
+        let first_array: Array<isize> = Array::of(vec![2, 2], vec![1, 2, 3, 4]);
+        let second_array: Array<isize> = Array::of(vec![2, 2], vec![1, 2, 3, 4]);
+
+        let result = first_array / second_array;
+
+        assert_eq!(result.dimensions, vec![2, 2]);
+        assert_eq!(result.data, vec![1, 1, 1, 1]);
+    }
+
+    #[test]
+    #[should_panic]
+    fn should_not_divide_arrays_with_different_dimensions() {
+        let first_array: Array<isize> = Array::of(vec![2, 2], vec![1, 2, 3, 4]);
+        let second_array: Array<isize> = Array::of(vec![2, 2, 1], vec![1, 2, 3, 4]);
+
+        let _ = first_array / second_array;
     }
 }
