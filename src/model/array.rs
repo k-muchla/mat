@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Index, Sub};
+use std::ops::{Add, AddAssign, Index, Sub, SubAssign};
 
 #[derive(Clone)]
 pub struct Array<T> {
@@ -114,6 +114,17 @@ impl<T: Sub<Output = T> + Copy> Sub<Array<T>> for Array<T> {
         Array {
             data,
             dimensions: self.dimensions,
+        }
+    }
+}
+
+impl<T: SubAssign + Copy> SubAssign<Array<T>> for Array<T> {
+    fn sub_assign(&mut self, subtrahend: Array<T>) {
+        if self.dimensions != subtrahend.dimensions {
+            panic!("Minuend dimensions and subtraend dimensions mismatch.")
+        }
+        for data_index in 0..self.data.len() {
+            self.data[data_index] -= subtrahend.data[data_index];
         }
     }
 }
@@ -271,5 +282,25 @@ mod tests {
         let second_array: Array<isize> = Array::of(vec![2, 2, 1], vec![1, 2, 3, 4]);
 
         let _ = first_array - second_array;
+    }
+
+    #[test]
+    fn should_subtract_assign_arrays() {
+        let mut first_array: Array<isize> = Array::of(vec![2, 2], vec![1, 2, 3, 4]);
+        let second_array: Array<isize> = Array::of(vec![2, 2], vec![1, 2, 3, 4]);
+
+        first_array -= second_array;
+
+        assert_eq!(first_array.dimensions, vec![2, 2]);
+        assert_eq!(first_array.data, vec![0, 0, 0, 0]);
+    }
+
+    #[test]
+    #[should_panic]
+    fn should_not_subtract_assign_arrays_with_different_dimensions() {
+        let mut first_array: Array<isize> = Array::of(vec![2, 2], vec![1, 2, 3, 4]);
+        let second_array: Array<isize> = Array::of(vec![2, 2, 1], vec![1, 2, 3, 4]);
+
+        first_array -= second_array;
     }
 }
